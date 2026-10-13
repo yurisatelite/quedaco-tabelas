@@ -417,7 +417,7 @@ export class TablesApp extends foundry.applications.api.ApplicationV2 {
         if (!this.rows.length) throw Error("Nenhum NPC registrado nessa região.");
         const region = integration.regions.find((entry) => entry.id === requested);
         this.config.name = `NPCs · ${region?.name ?? (requested === "__unplaced" ? "Sem região" : "Todas as regiões")}`;
-        this.config.formula = `1d${this.rows.length}`;
+        this.config.formula = `1d${Math.max(2, this.rows.length)}`;
         this.config.count = this.rows.length;
         this.config.distribution = "equal";
         this.config.tags = ["npc", "quedaco", requested].filter(Boolean).join(", ");
