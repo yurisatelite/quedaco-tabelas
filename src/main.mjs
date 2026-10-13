@@ -13,11 +13,31 @@ function open() {
   return app;
 }
 Hooks.once("ready", () => {
-  game.modules.get(ID).api = {
+  const module = game.modules.get(ID);
+  const descriptor = Object.freeze({
+    family: "quedaco",
+    contractVersion: 1,
+    id: ID,
+    title: module.title,
+    version: module.version,
+    capabilities: Object.freeze({
+      tableBuilder: true,
+      rollTables: true,
+      documentClimateImport: true,
+      npcRegionalTables: true,
+    }),
     open,
+    getStatus: () => ({
+      ready: true,
+      integrations: {
+        quedaco: Boolean(game.modules.get("quedaco")?.api?.family === "quedaco"),
+      },
+    }),
     draw,
     scan: (options) => scan(game, options),
-  };
+  });
+  module.api = descriptor;
+  Hooks.callAll("quedaco:register", descriptor);
 });
 Hooks.on("renderRollTableDirectory", (directory, html) => {
   if (!game.user.isGM) return;

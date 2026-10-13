@@ -1,7 +1,7 @@
 export function quedacoIntegration(game) {
   const module = game?.modules?.get?.("quedaco");
   const api = module?.active === false ? null : module?.api;
-  if (!api?.listNpcs || !api?.listRegions) return null;
+  if (api?.family !== "quedaco" || !api.capabilities?.npcDatabase || !api?.listNpcs || !api?.listRegions) return null;
   return { npcs: api.listNpcs(), regions: api.listRegions() };
 }
 

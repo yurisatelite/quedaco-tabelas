@@ -4,6 +4,8 @@ import { npcRows, quedacoIntegration } from "../src/quedaco-integration.mjs";
 
 test("lê a API do QUEDAÇO e cria resultados vinculados aos Actors", () => {
   const api = {
+    family: "quedaco",
+    capabilities: { npcDatabase: true },
     listRegions: () => [{ id: "mirmir", name: "Deserto de Mirmir" }],
     listNpcs: () => [{ uuid: "Actor.a1", name: "Mara", img: "mara.webp", role: "merchant", regionId: "mirmir", regionName: "Deserto de Mirmir", placeId: "kravokia", placeName: "Kravokia" }],
   };
@@ -17,4 +19,9 @@ test("lê a API do QUEDAÇO e cria resultados vinculados aos Actors", () => {
 
 test("integração fica indisponível sem o QUEDAÇO ativo", () => {
   assert.equal(quedacoIntegration({ modules: { get: () => ({ active: false }) } }), null);
+});
+
+test("integração recusa APIs sem o contrato público da família", () => {
+  const api = { listRegions: () => [], listNpcs: () => [] };
+  assert.equal(quedacoIntegration({ modules: { get: () => ({ active: true, api }) } }), null);
 });
