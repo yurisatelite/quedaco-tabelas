@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Quedaço - Tabelas · Prévia isolada</title>
+    <link rel="stylesheet" href="/styles/tables.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #182923;
+        padding: 24px;
+        font-family: system-ui, sans-serif;
+      }
+      .qt-app {
+        max-width: 1160px;
+        height: 850px;
+        margin: auto;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 16px 70px #0005;
+      }
+      .window-content {
+        height: 100%;
+      }
+      i {
+        font-style: normal;
+      }
+      button {
+        cursor: pointer;
+      }
+      .notice {
+        position: fixed;
+        bottom: 8px;
+        right: 8px;
+        background: #fff3d9;
+        padding: 12px;
+        color: #243d36;
+        border-radius: 8px;
+        max-width: 400px;
+      }
+      h1,
+      h2,
+      h3,
+      p {
+        line-height: 1.4;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="qt-app"><div class="window-content" id="app"></div></div>
+    <script type="module">
+      const notices = (message) => {
+        let el = document.querySelector(".notice");
+        if (!el) {
+          el = document.createElement("div");
+          el.className = "notice";
+          document.body.append(el);
+        }
+        el.textContent = message;
+      };
+      const collection = (values) =>
+        Object.assign(values, { get: (id) => values.find((v) => v.id === id) });
+      globalThis.Hooks = { on() {}, off() {} };
+      globalThis.game = {
+        user: { id: "gm", isGM: true },
+        folders: collection([
+          { id: "names", type: "RollTable", name: "Nomes e personagens" },
+          { id: "journey", type: "RollTable", name: "Viagens e exploração" },
+          { id: "items", type: "Item", name: "Inventário da campanha" },
+        ]),
+        packs: [],
+        tables: collection([]),
+        items: collection([]),
+        actors: collection([]),
+        scenes: collection([]),
+        journal: collection([]),
+      };
+      globalThis.ui = {
+        notifications: { info: notices, warn: notices, error: notices },
+      };
+      globalThis.foundry = {
+        applications: {
+          api: {
+            ApplicationV2: class {
+              constructor() {
+                this.element = document.querySelector("#app");
+              }
+              async _onRender() {}
+              async render() {
+                this.element.innerHTML = await this._renderHTML();
+                await this._onRender();
+                return this;
+              }
+            },
+            DialogV2: class {
+              constructor(options) {
+                this.options = options;
+                this.listeners = {};
+              }
+              addEventListener(name, fn) {
+                this.listeners[name] = fn;
+              }
+              render() {
+                const outer = document.createElement("div");
+                outer.style.cssText =
+                  "position:fixed;inset:10% 20%;padding:24px;background:#f5f1e9;border:1px solid #b8874d;z-index:10;overflow:auto;color:#243d36;border-radius:10px";
+                outer.innerHTML = `<h2>${this.options.window.title}</h2>${this.options.content}`;
+                this.element = outer;
+                for (const b of this.options.buttons) {
+                  const el = document.createElement("button");
+                  el.textContent = b.label;
+                  el.addEventListener("click", async () => {
+                    await b.callback?.(null, null, this);
+                    outer.remove();
+                  });
+                  outer.append(el);
+                }
+                document.body.append(outer);
+                this.listeners.render?.();
+              }
+            },
+          },
+        },
+        utils: {
+          randomID: () => crypto.randomUUID().replaceAll("-", "").slice(0, 16),
+        },
+      };
+      globalThis.fromUuid = async () => null;
+      globalThis.Roll = class {
+        constructor(formula) {
+          this.formula = formula;
+        }
+        async evaluate() {
+          const m = this.formula.match(/(\d+)d(\d+)/);
+          this.total = Array.from(
+            { length: Number(m[1]) },
+            () => 1 + Math.floor(Math.random() * Number(m[2])),
+          ).reduce((a, b) => a + b, 0);
+          return this;
+        }
+      };
+      const { TablesApp } = await import("/src/app.mjs");
+      globalThis.previewApp = new TablesApp();
+      previewApp.config = {
+        ...previewApp.config,
+        name: "100 nomes masculinos dracônicos",
+        formula: "1d100",
+        count: 100,
+        culture: "draconic",
+        folder: "names",
+        description:
+          "Nomes para viajantes, personagens e testemunhas da campanha.",
+      };
+      await previewApp.render();
+      await previewApp.action("generate");
+    </script>
+  </body>
+</html>
