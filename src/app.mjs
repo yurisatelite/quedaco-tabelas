@@ -12,6 +12,7 @@ import {
   toCSV,
 } from "./core.mjs";
 import { THEMES, DIFFICULTIES, generate } from "./generators.mjs";
+import { parseClimateText, expandClimate } from "./pdf-climate.mjs";
 import { scan } from "./catalog.mjs";
 import { save, read, draw, reset, download, exportTable } from "./foundry.mjs";
 const blank = () => ({
@@ -38,6 +39,9 @@ const blank = () => ({
   newFolder: "",
   packs: [],
   warnings: [],
+  documentText: "",
+  documentLocation: "",
+  documentCount: 100,
 });
 const option = (value, label, current) =>
   `<option value="${e(value)}" ${String(value) === String(current) ? "selected" : ""}>${e(label)}</option>`;
@@ -167,12 +171,14 @@ export class TablesApp extends foundry.applications.api.ApplicationV2 {
       ["local", "Gerar localmente"],
       ["world", "Conteúdo existente"],
       ["manual", "Colar uma lista"],
+      ["document", "Ler documento"],
     ]
       .map(
         ([v, l]) =>
           `<label class="${c.mode === v ? "active" : ""}"><input type="radio" name="mode" value="${v}" ${c.mode === v ? "checked" : ""}>${l}</label>`,
       )
       .join("")}</div>
+    ${c.mode === "document" ? `<label>Documento de clima<input name="documentFile" type="file" accept=".pdf,.txt,text/plain,application/pdf"></label><label>Texto extraído (fallback)<textarea name="documentText" rows="4" placeholder="Você também pode colar aqui o texto extraído do PDF.">${e(c.documentText)}</textarea></label><div class="qt-fields"><label>Localidade<select name="documentLocation"><option value="">Todas as localidades</option>${(this.documentLocations ?? []).map((x) => option(x.location, x.location, c.documentLocation)).join("")}</select></label><label>Expansão<select name="documentCount">${[20, 50, 100].map((v) => option(v, `D${v}`, c.documentCount)).join("")}</select></label></div><p class="qt-hint">O módulo usa apenas os blocos de clima. As faixas do documento são preservadas; os detalhes adicionais são expansões narrativas genéricas.</p>` : ""}
     ${
       c.mode === "local" && c.theme === "names"
         ? `<div class="qt-fields"><label>Estilo<select name="culture">${[
@@ -279,6 +285,7 @@ export class TablesApp extends foundry.applications.api.ApplicationV2 {
     form?.addEventListener("change", (event) => {
       this.collect();
       const name = event.target.name;
+      if (name === "documentFile" && event.target.files?.[0]) void this.readClimateFile(event.target.files[0]);
       if (name === "preset" && event.target.value !== "custom") {
         this.config.formula = event.target.value;
         const d = dice(this.config.formula);
@@ -350,6 +357,25 @@ export class TablesApp extends foundry.applications.api.ApplicationV2 {
         this.render({ force: true });
       });
   }
+  async readClimateFile(file) {
+    try {
+      let text;
+      if (file.name.toLowerCase().endsWith(".txt") || file.type === "text/plain") text = await file.text();
+      else {
+        const pdfjs = globalThis.pdfjsLib ?? globalThis.PDFJS ?? globalThis.pdfjs;
+        if (!pdfjs?.getDocument) throw Error("O leitor PDF não está disponível nesta tela. Cole o texto extraído no campo abaixo ou carregue um arquivo .txt.");
+        const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+        const pages = [];
+        for (let i = 1; i <= pdf.numPages; i++) pages.push((await pdf.getPage(i)).getTextContent().then((x) => x.items.map((item) => item.str).join("\n")));
+        text = (await Promise.all(pages)).join("\n");
+      }
+      this.config.documentText = text;
+      this.documentLocations = parseClimateText(text);
+      if (!this.config.name) this.config.name = "Clima · Localidades Skyfall";
+      this.render({ force: true });
+      ui.notifications.info(`${this.documentLocations.length} localidade(s) de clima identificada(s).`);
+    } catch (err) { error(err); }
+  }
   async action(op, data = {}) {
     this.collect();
     const table = data.id && op !== "theme" ? game.tables.get(data.id) : null;
@@ -387,6 +413,19 @@ export class TablesApp extends foundry.applications.api.ApplicationV2 {
       this.busy = true;
       await this.render({ force: true });
       try {
+        if (this.config.mode === "document") {
+          this.documentLocations = parseClimateText(this.config.documentText);
+          if (!this.documentLocations.length) throw Error("Nenhum bloco de clima foi encontrado. Carregue o PDF ou cole o texto extraído.");
+          const selected = this.documentLocations.find((x) => x.location === this.config.documentLocation);
+          const locations = selected ? [selected] : this.documentLocations;
+          this.rows = locations.flatMap((location) => expandClimate(location, Number(this.config.documentCount ?? 100)));
+          this.config.formula = `1d${this.rows.length}`;
+          this.config.count = this.rows.length;
+          this.config.description = "Clima extraído de Localidades Skyfall.pdf. Faixas originais preservadas; detalhes adicionais são expansões narrativas do Quedaço.";
+          this.config.warnings = [`Fonte: Localidades Skyfall.pdf · ${locations.length} localidade(s).`, "As condições detalhadas são expansões genéricas do módulo; não representam novas informações canônicas do documento."];
+          this.offset = 0;
+          return;
+        }
         const catalog =
           this.config.mode === "world"
             ? await scan(game, { packs: this.config.packs })
