@@ -13,6 +13,7 @@ import {
 } from "./core.mjs";
 import { THEMES, DIFFICULTIES, generate } from "./generators.mjs";
 import { parseClimateText, expandClimate } from "./pdf-climate.mjs";
+import { npcRows, quedacoIntegration } from "./quedaco-integration.mjs";
 import { scan } from "./catalog.mjs";
 import { save, read, draw, reset, download, exportTable } from "./foundry.mjs";
 const blank = () => ({
@@ -42,6 +43,7 @@ const blank = () => ({
   documentText: "",
   documentLocation: "",
   documentCount: 100,
+  quedacoRegion: "",
 });
 const option = (value, label, current) =>
   `<option value="${e(value)}" ${String(value) === String(current) ? "selected" : ""}>${e(label)}</option>`;
@@ -146,6 +148,7 @@ export class TablesApp extends foundry.applications.api.ApplicationV2 {
     }
     const folders = game.folders.filter((f) => f.type === "RollTable");
     const sourceFolders = game.folders.filter((f) => f.type === c.documentType);
+    const integration = quedacoIntegration(game);
     return `<div class="qt-workbench"><aside class="qt-themes"><span class="qt-label">O que você quer criar?</span>${THEMES.map((t) => `<button type="button" data-op="theme" data-id="${t.id}" class="${t.id === c.theme ? "active" : ""}"><i class="fa-solid ${t.icon}"></i>${e(t.label)}</button>`).join("")}</aside><main class="qt-editor"><form id="qt-config"><section class="qt-panel"><div class="qt-section-title"><i class="fa-solid ${theme.icon}"></i><div><h2>${e(theme.label)}</h2><p>${e(theme.hint)}</p></div><span class="qt-badge">${this.table ? "Editando" : "Criando"}</span></div>
       <label>Nome da tabela<input name="name" value="${e(c.name)}" placeholder="Ex.: 100 nomes masculinos dracônicos"></label>
       <div class="qt-fields"><label>Dado<select name="preset">${["1d4", "1d6", "1d8", "1d10", "1d12", "1d20", "1d100", "2d6", "custom"].map((v) => option(v, v === "custom" ? "Personalizado" : v.toUpperCase(), ["1d4", "1d6", "1d8", "1d10", "1d12", "1d20", "1d100", "2d6"].includes(c.formula) ? c.formula : "custom")).join("")}</select></label><label>Fórmula<input name="formula" value="${e(c.formula)}" placeholder="1d100"></label><label>Linhas<input name="count" type="number" min="1" max="1000" value="${e(c.count)}"></label></div>
@@ -237,6 +240,7 @@ export class TablesApp extends foundry.applications.api.ApplicationV2 {
             )}</div></details><label class="qt-toggle"><input name="fallback" type="checkbox" ${check(c.fallback)}> Completar faltantes com resultados genéricos narrativos</label><p class="qt-hint">Nenhum Item ou Actor será criado. A tag “amaldicoado” pode vir do nome ou de uma classificação manual; isso não confirma uma mecânica de maldição.</p>`
         : ""
     }
+    ${c.mode === "world" && c.theme === "npcs" ? `<div class="qt-integration"><h4>Integração com o QUEDAÇO</h4>${integration ? `<label>Região registrada<select name="quedacoRegion"><option value="">Todas as regiões</option>${integration.regions.map((region) => option(region.id, `${region.name} · ${integration.npcs.filter((npc) => npc.regionId === region.id).length} NPC(s)`, c.quedacoRegion)).join("")}<option value="__unplaced" ${c.quedacoRegion === "__unplaced" ? "selected" : ""}>Sem região · ${integration.npcs.filter((npc) => !npc.regionId).length} NPC(s)</option></select></label><p class="qt-hint">Cada resultado será vinculado à ficha real do NPC. Nenhum Actor será duplicado.</p>` : `<div class="qt-warning">Ative o módulo QUEDAÇO para ler seus NPCs e regiões registrados.</div>`}</div>` : ""}
     ${c.mode === "manual" ? `<label>Uma entrada por linha<textarea name="list" rows="6" placeholder="Primeiro resultado\nSegundo resultado">${e(c.list)}</textarea></label>` : ""}
     <button type="button" data-op="generate" class="qt-primary" ${this.busy ? "disabled" : ""}><i class="fa-solid fa-wand-magic-sparkles"></i> ${this.busy ? "Consultando fontes…" : "Gerar prévia"}</button></section>
     <section class="qt-panel"><h3>Organização e comportamento</h3><div class="qt-fields"><label>Pasta de destino<select name="folder">${option("", "Sem pasta", c.folder)}${folders.map((f) => option(f.id, f.name, c.folder)).join("")}</select></label><label>Ou criar nova pasta<input name="newFolder" value="${e(c.newFolder)}" placeholder="Ex.: Quedaço - Tabelas"></label></div><div class="qt-fields"><label>Repetição<select name="repeat">${[
@@ -404,6 +408,25 @@ export class TablesApp extends foundry.applications.api.ApplicationV2 {
       } else this.config.mode = "local";
     }
     if (op === "generate") {
+      if (this.config.mode === "world" && this.config.theme === "npcs") {
+        const integration = quedacoIntegration(game);
+        if (!integration) throw Error("Ative o módulo QUEDAÇO para gerar tabelas regionais de NPCs.");
+        const requested = this.config.quedacoRegion;
+        const filtered = requested === "__unplaced" ? { ...integration, npcs: integration.npcs.filter((npc) => !npc.regionId) } : integration;
+        this.rows = npcRows(filtered, requested === "__unplaced" ? "" : requested);
+        if (!this.rows.length) throw Error("Nenhum NPC registrado nessa região.");
+        const region = integration.regions.find((entry) => entry.id === requested);
+        this.config.name = `NPCs · ${region?.name ?? (requested === "__unplaced" ? "Sem região" : "Todas as regiões")}`;
+        this.config.formula = `1d${this.rows.length}`;
+        this.config.count = this.rows.length;
+        this.config.distribution = "equal";
+        this.config.tags = ["npc", "quedaco", requested].filter(Boolean).join(", ");
+        this.config.description = "NPCs registrados no módulo QUEDAÇO. Cada resultado aponta para a ficha original do Actor.";
+        this.config.warnings = [`${this.rows.length} NPC(s) reconhecido(s). Nenhuma ficha foi duplicada.`];
+        this.offset = 0;
+        await this.render({ force: true });
+        return;
+      }
       const count = int(this.config.count, 1, 1000, "Linhas"),
         d = dice(this.config.formula);
       if (count > d.max - d.min + 1)
