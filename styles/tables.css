@@ -210,11 +210,43 @@
 }
 .qt-app input[type="checkbox"],
 .qt-app input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
   min-height: 16px;
   width: 16px;
   height: 16px;
+  margin: 0;
+  padding: 0;
   accent-color: #234b3e;
   flex: none;
+}
+.qt-app input[type="checkbox"] {
+  display: inline-grid;
+  place-content: center;
+  border: 1px solid #78958a;
+  border-radius: 3px;
+  background: #fffef9;
+  vertical-align: middle;
+}
+.qt-app input[type="checkbox"]::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  transform: scale(0);
+  transition: transform .1s ease;
+  background: #234b3e;
+  border-radius: 1px;
+}
+.qt-app input[type="checkbox"]:checked {
+  border-color: #234b3e;
+}
+.qt-app input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+.qt-app input[type="checkbox"]:focus-visible {
+  outline: 2px solid #4fc3d8;
+  outline-offset: 2px;
 }
 .qt-fields {
   display: flex;
