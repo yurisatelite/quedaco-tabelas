@@ -74,3 +74,5 @@ Hooks.on("getSceneControlButtons", (controls) => {
     if (group?.tools) group.tools[tool.name] = tool;
   }
 });
+
+Hooks.on('quedaco:catalog-updated',()=>{if(app?.rendered){app.collect();app.render({force:true});}});

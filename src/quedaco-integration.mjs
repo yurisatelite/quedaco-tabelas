@@ -2,7 +2,8 @@ export function quedacoIntegration(game) {
   const module = game?.modules?.get?.("quedaco");
   const api = module?.active === false ? null : module?.api;
   if (api?.family !== "quedaco" || !api.capabilities?.npcDatabase || !api?.listNpcs || !api?.listRegions) return null;
-  return { npcs: api.listNpcs(), regions: api.listRegions() };
+  const catalog=typeof api.getWorldCatalog==='function'?api.getWorldCatalog():null;
+  return { npcs: api.listNpcs(), regions: api.listRegions(), ...(catalog?{places:catalog.places,tags:catalog.tags,climates:catalog.climates}: {}) };
 }
 
 export function npcRows(integration, regionId = "") {

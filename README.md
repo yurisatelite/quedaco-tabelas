@@ -59,3 +59,8 @@ Verificação: testes Node de probabilidades, geração, fontes, persistência s
 `npm ci`, `npm test`, `npm run package`. O ZIP em `dist/quedaco-tabelas.zip` tem module.json na raiz. A versão instalada não precisa de npm nem das dependências de teste.
 
 API: `game.modules.get('quedaco-tabelas').api.open()`, `.api.scan({packs:[]})` e `.api.draw(table, options)`. Desenho interno e schema conferido: [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
+
+
+## Catálogo compartilhado (0.4.2)
+
+A ponte quedacoIntegration também oferece places, tags e climates ao consultar QUEDAÇO 0.18.0 ativo. A base é consultada pela API; não há dependência de instalação. Perfis de clima são metadados de contexto, sem substituir a tabela meteorológica criada/importada.
