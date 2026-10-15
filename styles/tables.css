@@ -1,3 +1,8 @@
+/* QUEDAÇO - Tabelas
+   Estrutura: tokens -> janela -> base de formulário (specificity 0 via :where)
+   -> componentes -> responsivo (container queries, Foundry 13). */
+
+/* ---------- Tokens e janela ---------- */
 .qt-app {
   --qt-paper: #f5f1e9;
   --qt-card: #fffcf6;
@@ -5,9 +10,17 @@
   --qt-muted: #61716a;
   --qt-line: #d7ddcf;
   --qt-green: #234b3e;
+  --qt-green-hover: #306450;
   --qt-gold: #b8874d;
+  --qt-sidebar: #e9ede3;
+  --qt-focus: #aa7335;
+  --qt-space: 12px;
+  --qt-fs-xs: 11px;
+  --qt-fs-sm: 12px;
   color: var(--qt-ink);
   font-family: system-ui, sans-serif;
+  min-width: 420px;
+  min-height: 360px;
 }
 .qt-app .window-content {
   padding: 0;
@@ -18,16 +31,140 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 400px;
+  min-height: 0;
+  min-width: 0;
+  container: qt / inline-size;
 }
+
+/* ---------- Base de formulário (compartilhada com o diálogo .qt-mini) ----------
+   :where() zera a especificidade: qualquer componente abaixo sobrescreve sem !important. */
+:where(.qt-shell, .qt-mini) :where(button) {
+  font: inherit;
+  font-size: var(--qt-fs-sm);
+  background: var(--qt-card);
+  color: var(--qt-ink);
+  border: 1px solid var(--qt-line);
+  border-radius: 6px;
+  padding: 8px 12px;
+  line-height: 1.2;
+  min-height: 32px;
+  height: auto;
+  width: auto;
+  box-shadow: none;
+  cursor: pointer;
+}
+:where(.qt-shell, .qt-mini) :where(button:not(:disabled):hover) {
+  background: #e6eddf;
+  border-color: #94ad9e;
+}
+:where(.qt-shell, .qt-mini) :where(button:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+:where(.qt-shell, .qt-mini) :where(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--qt-focus);
+  outline-offset: 2px;
+}
+:where(.qt-shell, .qt-mini) :where(h2, h3, h4) {
+  color: var(--qt-ink);
+  border: 0;
+  margin: 0;
+  font-weight: 650;
+}
+:where(.qt-shell, .qt-mini) :where(h2) {
+  font-size: 18px;
+}
+:where(.qt-shell, .qt-mini) :where(h3) {
+  font-size: 14px;
+}
+:where(.qt-shell, .qt-mini) :where(h4) {
+  font-size: 13px;
+}
+:where(.qt-shell, .qt-mini) :where(label) {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--qt-fs-xs);
+  font-weight: 600;
+  min-width: 0;
+}
+:where(.qt-shell, .qt-mini) :where(input, select, textarea) {
+  box-sizing: border-box;
+  border: 1px solid #becabc;
+  border-radius: 5px;
+  background: #fffef9;
+  color: var(--qt-ink);
+  font-family: inherit;
+  font-size: var(--qt-fs-sm);
+  padding: 8px;
+  line-height: 1.4;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 34px;
+  margin: 0;
+  box-shadow: none;
+}
+:where(.qt-shell, .qt-mini) :where(textarea) {
+  resize: vertical;
+}
+:where(.qt-shell, .qt-mini) :where(input[type="checkbox"], input[type="radio"]) {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  min-height: 16px;
+  padding: 0;
+  flex: none;
+}
+:where(.qt-shell, .qt-mini) :where(input[type="checkbox"]) {
+  display: inline-grid;
+  place-content: center;
+  border: 1px solid #78958a;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+:where(.qt-shell, .qt-mini) :where(input[type="checkbox"])::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  transform: scale(0);
+  transition: transform 0.1s ease;
+  background: var(--qt-green);
+  border-radius: 1px;
+}
+:where(.qt-shell, .qt-mini) :where(input[type="checkbox"]:checked) {
+  border-color: var(--qt-green);
+}
+:where(.qt-shell, .qt-mini) :where(input[type="checkbox"]:checked)::before {
+  transform: scale(1);
+}
+:where(.qt-shell, .qt-mini) :where(summary) {
+  font-size: var(--qt-fs-xs);
+  cursor: pointer;
+  color: #416c56;
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.qt-shell, .qt-mini) :where(input[type="checkbox"])::before {
+    transition: none;
+  }
+}
+
+/* ---------- Cabeçalho ---------- */
 .qt-top {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 24px;
   align-items: center;
+  gap: 12px 24px;
   padding: 20px 24px;
   background: var(--qt-green);
   color: #fff9ee;
+  flex: none;
+}
+.qt-top > div {
+  min-width: 0;
 }
 .qt-kicker {
   font-size: 10px;
@@ -38,6 +175,7 @@
 .qt-top h1 {
   margin: 4px 0;
   font-size: 30px;
+  line-height: 1.1;
   font-weight: 650;
   border: 0;
   color: inherit;
@@ -45,62 +183,38 @@
 .qt-top p {
   margin: 0;
   color: #d1dfd5;
-  font-size: 12px;
+  font-size: var(--qt-fs-sm);
 }
 .qt-top nav {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
-.qt-app button {
-  font: inherit;
-  font-size: 12px;
-  background: #fffcf6;
-  color: #243d36;
-  border: 1px solid var(--qt-line);
-  border-radius: 6px;
-  padding: 8px 12px;
-  line-height: 1.2;
-  min-height: 32px;
-  height: auto;
-  box-shadow: none;
-  cursor: pointer;
-}
-.qt-app button:hover {
-  background: #e6eddf;
-  border-color: #94ad9e;
-}
-.qt-app button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.qt-app button:focus-visible,
-.qt-app input:focus-visible,
-.qt-app select:focus-visible,
-.qt-app textarea:focus-visible {
-  outline: 2px solid #aa7335;
-  outline-offset: 2px;
-}
 .qt-top button {
   background: #ffffff0d;
   border-color: #ffffff40;
   color: #fff9ee;
 }
-.qt-top button:hover {
+.qt-top button:not(:disabled):hover {
   background: #ffffff25;
+  border-color: #ffffff60;
 }
+
+/* ---------- Área de trabalho (3 colunas) ---------- */
 .qt-workbench {
   display: grid;
-  grid-template-columns: 170px minmax(320px, 1fr) minmax(280px, 0.8fr);
+  grid-template-columns: 170px minmax(0, 1fr) minmax(280px, 0.8fr);
+  grid-template-rows: minmax(0, 1fr);
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
 .qt-themes {
   padding: 20px 12px;
-  background: #e9ede3;
+  background: var(--qt-sidebar);
   border-right: 1px solid var(--qt-line);
   overflow: auto;
+  min-width: 0;
 }
 .qt-label {
   display: block;
@@ -112,26 +226,27 @@
   margin-bottom: 12px;
 }
 .qt-themes button {
-  width: 100%;
-  text-align: left;
-  background: transparent;
-  border-color: transparent;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 8px;
+  width: 100%;
   margin: 2px 0;
-  font-size: 11px;
+  padding: 9px 8px;
+  text-align: left;
+  font-size: var(--qt-fs-xs);
+  background: transparent;
+  border-color: transparent;
 }
 .qt-themes button i {
+  flex: none;
   width: 16px;
   text-align: center;
   opacity: 0.75;
 }
 .qt-themes button.active {
-  background: #234b3e;
+  background: var(--qt-green);
   color: #fff9ee;
-  border-color: #234b3e;
+  border-color: var(--qt-green);
 }
 .qt-editor {
   overflow: auto;
@@ -139,152 +254,81 @@
   min-width: 0;
 }
 .qt-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--qt-space);
+  min-width: 0;
   padding: 16px;
   margin-bottom: 16px;
   background: var(--qt-card);
   border: 1px solid var(--qt-line);
   border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.qt-app h2,
-.qt-app h3 {
-  color: var(--qt-ink);
-  border: 0;
-  margin: 0;
-  font-weight: 650;
-}
-.qt-app h2 {
-  font-size: 18px;
-}
-.qt-app h3 {
-  font-size: 14px;
 }
 .qt-section-title {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--qt-space);
   margin-bottom: 4px;
 }
 .qt-section-title > i {
+  flex: none;
   font-size: 22px;
   color: #967040;
 }
 .qt-section-title > div {
   flex: 1;
+  min-width: 0;
 }
 .qt-section-title p {
   margin: 4px 0 0;
-  font-size: 11px;
+  font-size: var(--qt-fs-xs);
   color: var(--qt-muted);
-}
-.qt-app label,
-.qt-mini label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  min-width: 0;
-}
-.qt-app input,
-.qt-app select,
-.qt-app textarea {
-  border: 1px solid #becabc;
-  border-radius: 5px;
-  background: #fffef9;
-  color: #243d36;
-  font-family: inherit;
-  font-size: 12px;
-  padding: 8px;
-  line-height: 1.4;
-  width: 100%;
-  height: auto;
-  min-height: 34px;
-  margin: 0;
-  box-shadow: none;
-}
-.qt-app textarea {
-  resize: vertical;
-}
-.qt-app input[type="checkbox"],
-.qt-app input[type="radio"] {
-  appearance: none;
-  -webkit-appearance: none;
-  box-sizing: border-box;
-  min-height: 16px;
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  padding: 0;
-  accent-color: #234b3e;
-  flex: none;
-}
-.qt-app input[type="checkbox"] {
-  display: inline-grid;
-  place-content: center;
-  border: 1px solid #78958a;
-  border-radius: 3px;
-  background: #fffef9;
-  vertical-align: middle;
-}
-.qt-app input[type="checkbox"]::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  transform: scale(0);
-  transition: transform .1s ease;
-  background: #234b3e;
-  border-radius: 1px;
-}
-.qt-app input[type="checkbox"]:checked {
-  border-color: #234b3e;
-}
-.qt-app input[type="checkbox"]:checked::before {
-  transform: scale(1);
-}
-.qt-app input[type="checkbox"]:focus-visible {
-  outline: 2px solid #4fc3d8;
-  outline-offset: 2px;
 }
 .qt-fields {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: var(--qt-space);
   align-items: start;
 }
 .qt-fields > label {
-  flex: 1;
+  flex: 1 1 140px;
   min-width: 0;
 }
 .qt-toggle {
-  flex-direction: row !important;
+  flex-direction: row;
   align-items: center;
-  font-weight: 400 !important;
-  gap: 8px !important;
+  font-weight: 400;
+  gap: 8px;
 }
 .qt-hint {
-  font-size: 10px;
-  line-height: 1.6;
+  font-size: var(--qt-fs-xs);
+  line-height: 1.5;
   color: var(--qt-muted);
   margin: 0;
 }
+.qt-integration {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
 .qt-segments {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 4px;
-  background: #e9ede3;
+  background: var(--qt-sidebar);
   border-radius: 7px;
-  flex-wrap: wrap;
 }
 .qt-segments label {
-  flex: 1;
-  padding: 8px 4px;
+  position: relative;
+  flex: 1 1 auto;
+  align-items: center;
+  padding: 8px 6px;
   text-align: center;
   cursor: pointer;
-  align-items: center;
-  font-size: 10px;
-  white-space: nowrap;
+  font-size: var(--qt-fs-xs);
+  border-radius: 4px;
 }
 .qt-segments label input {
   position: absolute;
@@ -292,11 +336,15 @@
   pointer-events: none;
 }
 .qt-segments label.active {
-  background: #fffcf6;
-  border-radius: 4px;
+  background: var(--qt-card);
   box-shadow: 0 1px 3px #233e3615;
 }
+.qt-segments label:has(input:focus-visible) {
+  outline: 2px solid var(--qt-focus);
+  outline-offset: 1px;
+}
 .qt-badge {
+  flex: none;
   font-size: 10px;
   background: #e8eadb;
   color: #4f5e3f;
@@ -305,30 +353,45 @@
   white-space: nowrap;
 }
 .qt-primary {
-  background: #234b3e !important;
-  color: #fff9ee !important;
-  border-color: #234b3e !important;
-  padding: 12px !important;
-  font-weight: 650 !important;
+  background: var(--qt-green);
+  color: #fff9ee;
+  border-color: var(--qt-green);
+  padding: 12px;
+  font-weight: 650;
 }
-.qt-primary:hover {
-  background: #306450 !important;
+.qt-primary:not(:disabled):hover {
+  background: var(--qt-green-hover);
+  border-color: var(--qt-green-hover);
 }
-.qt-preview {
-  border-left: 1px solid var(--qt-line);
-  padding: 20px 16px;
-  overflow: hidden;
+.qt-pack-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+  max-height: 170px;
+  overflow: auto;
+  padding: 12px 0;
+}
+
+/* ---------- Prévia ---------- */
+.qt-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--qt-space);
   min-width: 0;
+  padding: 20px 16px;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: #efede4;
+  border-left: 1px solid var(--qt-line);
+}
+.qt-preview > * {
+  flex-shrink: 0;
 }
 .qt-preview-heading {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--qt-space);
 }
 .qt-preview-heading .qt-label {
   margin-bottom: 4px;
@@ -337,7 +400,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--qt-fs-sm);
+  overflow-wrap: anywhere;
 }
 .qt-summary small {
   color: var(--qt-muted);
@@ -347,9 +411,10 @@
   border: 1px solid #debf86;
   border-radius: 6px;
   padding: 10px;
-  font-size: 11px;
+  font-size: var(--qt-fs-xs);
   color: #644d26;
-  line-height: 1.6;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 .qt-warning p {
   margin: 0 0 4px;
@@ -358,37 +423,33 @@
 .qt-pagination {
   display: flex;
   align-items: center;
-  gap: 8px;
   justify-content: space-between;
+  gap: 8px;
 }
 .qt-preview-tools button {
   flex: 1;
   padding: 6px;
-  font-size: 11px;
+  font-size: var(--qt-fs-xs);
 }
 .qt-results {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1 1 auto;
   min-height: 120px;
-  flex: 1;
   overflow: auto;
   padding-right: 4px;
 }
-.qt-results .qt-result {
-  flex: none;
-}
-.qt-preview > *:not(.qt-results) {
-  flex-shrink: 0;
-}
 .qt-result {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
   border: 1px solid var(--qt-line);
   border-radius: 8px;
   background: var(--qt-card);
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 .qt-result-meta {
   display: flex;
@@ -399,18 +460,21 @@
   font-weight: 600;
 }
 .qt-result-meta span:first-child {
-  background: #e9ede3;
+  flex: none;
+  background: var(--qt-sidebar);
   padding: 3px 7px;
   border-radius: 4px;
 }
 .qt-result-meta span:nth-child(2) {
   flex: 1;
+  min-width: 0;
 }
 .qt-result-meta button {
+  flex: none;
   padding: 4px 6px;
+  min-height: 24px;
   border: 0;
   background: transparent;
-  min-height: 22px;
   color: #68736b;
 }
 .qt-result > input {
@@ -421,7 +485,7 @@
   min-height: 24px;
 }
 .qt-result > textarea {
-  font-size: 10px;
+  font-size: var(--qt-fs-xs);
   min-height: 42px;
   background: #f8f6ef;
   border-color: #e5e6db;
@@ -433,18 +497,21 @@
   gap: 8px;
 }
 .qt-result-bottom small {
-  font-size: 9px;
+  flex: 1;
+  min-width: 0;
+  font-size: 10px;
   color: #68736b;
 }
 .qt-result-bottom label {
+  flex: none;
   flex-direction: row;
   align-items: center;
-  font-size: 9px;
+  font-size: 10px;
 }
 .qt-result-bottom input {
-  width: 55px;
-  min-height: 25px;
-  padding: 3px;
+  width: 64px;
+  min-height: 26px;
+  padding: 3px 6px;
 }
 .qt-empty {
   padding: 36px 12px;
@@ -460,30 +527,21 @@
   margin-bottom: 8px;
 }
 .qt-empty p {
-  font-size: 12px;
-  line-height: 1.7;
+  font-size: var(--qt-fs-sm);
+  line-height: 1.6;
 }
-.qt-pack-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 170px;
-  overflow: auto;
-  padding: 12px 0;
-}
-.qt-app summary {
-  font-size: 11px;
-  cursor: pointer;
-  color: #416c56;
-}
+
+/* ---------- Rodapé ---------- */
 .qt-footer {
   display: flex;
+  flex: none;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 4px 12px;
   padding: 8px 20px;
   border-top: 1px solid var(--qt-line);
-  font-size: 9px;
+  font-size: 10px;
   color: var(--qt-muted);
   background: var(--qt-card);
 }
@@ -492,8 +550,11 @@
   padding: 4px 8px;
   font-size: 10px;
 }
+
+/* ---------- Biblioteca ---------- */
 .qt-library {
   flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 24px;
 }
@@ -503,53 +564,61 @@
 }
 .qt-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
   gap: 16px;
 }
 .qt-library-card {
-  background: var(--qt-card);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
   padding: 20px;
+  background: var(--qt-card);
   border: 1px solid var(--qt-line);
   border-radius: 10px;
 }
 .qt-library-card > small {
   font-size: 10px;
   color: var(--qt-muted);
+  overflow-wrap: anywhere;
 }
 .qt-library-card h3 {
-  margin-top: 8px;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
 }
 .qt-library-card p {
-  font-size: 11px;
+  margin: 0;
+  font-size: var(--qt-fs-xs);
   color: var(--qt-muted);
 }
 .qt-card-actions {
   display: flex;
-  gap: 4px;
   flex-wrap: wrap;
+  gap: 4px;
+  margin-top: auto;
+  padding-top: 6px;
 }
 .qt-card-actions button {
   font-size: 10px;
   padding: 6px 8px;
 }
+
+/* ---------- Diálogo auxiliar (.qt-mini, fora de .qt-app) ---------- */
 .qt-mini {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--qt-space, 12px);
   max-height: 65vh;
+  max-width: 100%;
   overflow: auto;
   padding: 8px;
+  color: #243d36;
 }
-.qt-mini input,
-.qt-mini select,
-.qt-mini textarea {
-  width: 100%;
-}
-.qt-mini .qt-fields {
-  flex-wrap: wrap;
+.qt-mini .qt-fields > label {
+  flex: 1 1 120px;
 }
 .qt-mini .qt-toggle input {
-  width: auto;
+  width: 16px;
 }
 .qt-chat h3 {
   margin-bottom: 8px;
@@ -560,21 +629,70 @@
 .qt-chat li {
   margin-bottom: 12px;
 }
-@media (max-width: 900px) {
+
+/* ---------- Responsivo (largura da própria janela) ---------- */
+/* Médio: temas viram coluna estreita; editor e prévia empilham e rolam juntos. */
+@container qt (max-width: 960px) {
   .qt-workbench {
-    grid-template-columns: 140px minmax(280px, 1fr) minmax(240px, 0.8fr);
+    grid-template-columns: 150px minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    overflow: auto;
   }
+  .qt-themes {
+    grid-row: 1 / span 2;
+    overflow: visible;
+  }
+  .qt-editor {
+    overflow: visible;
+    padding-bottom: 4px;
+  }
+  .qt-preview {
+    overflow: visible;
+    border-left: 0;
+    border-top: 1px solid var(--qt-line);
+  }
+  .qt-results {
+    max-height: 480px;
+  }
+}
+/* Estreito: coluna única, temas em fileira. */
+@container qt (max-width: 640px) {
   .qt-top {
-    padding: 16px;
+    padding: 14px 16px;
+  }
+  .qt-top h1 {
+    font-size: 24px;
+  }
+  .qt-workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .qt-themes {
+    grid-row: auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--qt-line);
+  }
+  .qt-themes .qt-label {
+    flex: 0 0 100%;
+    margin-bottom: 4px;
+  }
+  .qt-themes button {
+    width: auto;
+    margin: 0;
   }
   .qt-editor,
   .qt-preview {
     padding: 12px;
   }
-  .qt-fields {
-    flex-wrap: wrap;
+  .qt-library {
+    padding: 12px;
   }
-  .qt-fields > label {
-    min-width: 100px;
+  .qt-footer {
+    padding: 8px 12px;
   }
 }
